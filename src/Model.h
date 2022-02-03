@@ -17,6 +17,7 @@
 #include "Drawcall.h"
 #include "OBJLoader.h"
 #include "Texture.h"
+#include <functional>
 
 using namespace linalg;
 
@@ -32,6 +33,10 @@ protected:
 	ID3D11Buffer* index_buffer = nullptr;
 
 public:
+	// Transformation values
+	vec3f position = vec3f_zero;
+	vec3f eulerAngles = vec3f_zero;
+	vec3f scale = vec3f_zero;
 
 	Model(
 		ID3D11Device* dxdevice, 
@@ -43,7 +48,7 @@ public:
 	//
 	// Abstract render method: must be implemented by derived classes
 	//
-	virtual void Render() const = 0;
+	virtual void Render(std::function<void(vec4f, vec4f, vec4f, float)> phongBufferUpdate = nullptr) const = 0;
 
 	//
 	// Destructor
@@ -59,15 +64,38 @@ class QuadModel : public Model
 {
 	unsigned nbr_indices = 0;
 
+	Material* material;
+
 public:
 
 	QuadModel(
 		ID3D11Device* dx3ddevice,
 		ID3D11DeviceContext* dx3ddevice_context);
 
-	virtual void Render() const;
+	void SetMaterial(const Material& mat) { *material = mat; }
+
+	virtual void Render(std::function<void(vec4f, vec4f, vec4f, float)> phongBufferUpdate = nullptr) const;
 
 	~QuadModel() { }
+};
+
+class CubeModel : public Model
+{
+	unsigned nbr_indices = 0;
+
+	Material* material;
+
+public:
+
+	CubeModel(
+		ID3D11Device* dx3ddevice,
+		ID3D11DeviceContext* dx3ddevice_context);
+
+	void SetMaterial(const Material& mat) { *material = mat; }
+
+	void Render(std::function<void(vec4f, vec4f, vec4f, float)> phongBufferUpdate = nullptr) const;
+
+	~CubeModel() { }
 };
 
 class OBJModel : public Model
@@ -96,7 +124,7 @@ public:
 		ID3D11Device* dxdevice,
 		ID3D11DeviceContext* dxdevice_context);
 
-	virtual void Render() const;
+	virtual void Render(std::function<void(vec4f, vec4f, vec4f, float)> phongBufferUpdate = nullptr) const;
 
 	~OBJModel();
 };

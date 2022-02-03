@@ -55,7 +55,11 @@ class OurTestScene : public Scene
 
 	// CBuffer for transformation matrices
 	ID3D11Buffer* transformation_buffer = nullptr;
+	ID3D11Buffer* light_Buffer = nullptr;
+	ID3D11Buffer* phong_Buffer = nullptr;
 	// + other CBuffers
+
+	ID3D11SamplerState* samplerState = nullptr;
 
 	// 
 	// CBuffer client-side definitions
@@ -69,17 +73,39 @@ class OurTestScene : public Scene
 		mat4f ProjectionMatrix;
 	};
 
+	struct LightBuffer
+	{
+		vec4f lightPosition;
+		vec4f cameraPosition;
+	};
+
+	struct alignas(16) PhongBuffer
+	{
+		vec4f ambientColor;
+		vec4f diffuseColor;
+		vec4f specularColor;
+		alignas(16) float shininess;
+	};
+
+	D3D11_SAMPLER_DESC samplerDesc;
+
 	//
 	// Scene content
 	//
 	Camera* camera;
 
+	vec4f lightPosition;
+
 	QuadModel* quad;
+	std::vector<Model*> h_models;
 	OBJModel* sponza;
+	OBJModel* trojan;
 
 	// Model-to-world transformation matrices
 	mat4f Msponza;
+	std::vector<mat4f> Mh_models;
 	mat4f Mquad;
+	mat4f Mtrojan;
 
 	// World-to-view matrix
 	mat4f Mview;
@@ -87,6 +113,7 @@ class OurTestScene : public Scene
 	mat4f Mproj;
 
 	// Misc
+	float time = 0;
 	float angle = 0;			// A per-frame updated rotation angle (radians)...
 	float angle_vel = fPI / 2;	// ...and its velocity (radians/sec)
 	float camera_vel = 5.0f;	// Camera movement velocity in units/s
@@ -99,6 +126,14 @@ class OurTestScene : public Scene
 		mat4f WorldToViewMatrix,
 		mat4f ProjectionMatrix);
 
+	void InitLightBuffer();
+
+	void UpdateLightBuffer(vec4f light, vec4f camera);
+
+	void InitPhongBuffer();
+
+	void UpdatePhongBuffer(vec4f ambient, vec4f diffuse, vec4f specular, float shininess);
+
 public:
 	OurTestScene(
 		ID3D11Device* dxdevice,
@@ -107,6 +142,12 @@ public:
 		int window_height);
 
 	void Init() override;
+
+	void AddModel(Model* toAdd)
+	{
+		h_models.push_back(toAdd);
+		Mh_models.push_back(mat4f_zero);
+	}
 
 	void Update(
 		float dt,
